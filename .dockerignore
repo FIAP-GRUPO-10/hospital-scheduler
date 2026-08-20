@@ -1,0 +1,9 @@
+# Ignore build artifacts and IDE files
+target/
+.m2/
+.git
+.gitignore
+.idea/
+*.iml
+*.log
+.DS_Store
