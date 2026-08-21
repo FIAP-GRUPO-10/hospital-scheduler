@@ -1,28 +1,67 @@
-# hospital-scheduler
+# 🏥 Hospital Scheduler
 
-Sistema hospitalar em Java/Spring Boot com GraphQL e RabbitMQ para agendamento de consultas e notificações.
+Projeto Java/Spring Boot organizado em módulos Maven para separar as responsabilidades do sistema hospitalar.
 
-Docker
+Estrutura do projeto
 
-- Build da imagem:
+hospital-scheduler/
+├── pom.xml
+├── docker-compose.yml
+├── Dockerfile
+├── .dockerignore
+├── agendamento/
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
+├── notificacoes/
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
+├── historico/
+│   ├── pom.xml
+│   ├── Dockerfile
+│   └── src/
+└── README.md
 
-  docker build -t hospital-scheduler .
+Módulos
 
-- Rodar localmente (imagem):
+- agendamento: porta 8081
+- notificacoes: porta 8082
+- historico: porta 8083
 
-  docker run -p 8080:8080 hospital-scheduler
+Execução local
 
-- Usando docker-compose:
+Na raiz do projeto:
 
-  docker-compose up --build
+- Build completo:
+  mvn clean package
 
-Healthcheck
+- Testes:
+  mvn test
 
-- Endpoint: GET /health -> {"status":"UP"}
-- O docker-compose inclui um healthcheck que usa /health para verificar se o serviço está UP.
+- Executar módulo individualmente:
+  cd agendamento && mvn spring-boot:run
+  cd notificacoes && mvn spring-boot:run
+  cd historico && mvn spring-boot:run
 
-Testes rápidos
+Endpoints principais
 
-- Build da aplicação: mvn clean package
-- Rodar durante desenvolvimento: mvn spring-boot:run
-- Verificar health: curl http://localhost:8080/health
+- Agendamento: http://localhost:8081/api/v1/agenda
+- Notificações: http://localhost:8082/health
+- Histórico: http://localhost:8083/api/v1/historico
+
+Execução com Docker Compose
+
+Na raiz do projeto:
+
+- Subir todos os serviços:
+  docker compose up --build
+
+- Parar os serviços:
+  docker compose down
+
+Observações
+
+- O Maven usa `pom.xml` na raiz como projeto agregador dos módulos.
+- Cada módulo possui seu próprio `pom.xml`, `Dockerfile` e configuração local em `src/main/resources/application.properties`.
+- Os serviços são isolados por porta para evitar conflitos durante o desenvolvimento local e em containers.

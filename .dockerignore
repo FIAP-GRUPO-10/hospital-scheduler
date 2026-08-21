@@ -1,5 +1,6 @@
 # Ignore build artifacts and IDE files
 target/
+**/target/
 .m2/
 .git
 .gitignore

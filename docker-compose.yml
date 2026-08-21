@@ -1,18 +1,104 @@
-version: "3.8"
-
 services:
-  hospital-scheduler:
-    build: .
-    ports:
-      - "8080:8080"
+  mysql:
+    image: mysql:8.0
+    container_name: hospital-mysql
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      SPRING_PROFILES_ACTIVE: dev
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - hospital-network
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      interval: 10s
+      timeout: 5s
       retries: 5
-      start_period: 10s
-    # Uncomment the following to mount source for local development
-    # volumes:
-    #   - ./target:/app/target
+
+  agendamento:
+    build:
+      context: .
+      dockerfile: agendamento/Dockerfile
+    container_name: hospital-agendamento
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8081:8081"
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  notificacoes:
+    build:
+      context: .
+      dockerfile: notificacoes/Dockerfile
+    container_name: hospital-notificacoes
+    depends_on:
+      rabbitmq:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_RABBITMQ_HOST: rabbitmq
+    ports:
+      - "8082:8082"
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  historico:
+    build:
+      context: .
+      dockerfile: historico/Dockerfile
+    container_name: hospital-historico
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "8083:8083"
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: hospital-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - hospital-network
+    restart: unless-stopped
+
+volumes:
+  mysql_data:
+
+networks:
+  hospital-network:
+    driver: bridge

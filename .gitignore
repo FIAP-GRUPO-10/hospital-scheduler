@@ -7,3 +7,6 @@ target/
 
 # Logs
 *.log
+
+# Environment
+.env
