@@ -1,4 +1,4 @@
-package com.example.hospitalscheduler;
+package br.com.fiap.grupo_10.hospitalscheduler;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
