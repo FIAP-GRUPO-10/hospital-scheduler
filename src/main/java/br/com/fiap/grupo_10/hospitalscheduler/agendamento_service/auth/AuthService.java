@@ -43,13 +43,8 @@ public class AuthService {
         usuario.setRole(request.role());
         usuario.setSenha(passwordEncoder.encode(request.senha()));
 
-        Usuario salvo = usuarioRepository.save(usuario);
+        Usuario save = usuarioRepository.save(usuario);
 
-        return new UsuarioResponse(
-                salvo.getId(),
-                salvo.getNome(),
-                salvo.getEmail(),
-                salvo.getRole()
-        );
+        return UsuarioResponse.fromEntity(save);
     }
 }

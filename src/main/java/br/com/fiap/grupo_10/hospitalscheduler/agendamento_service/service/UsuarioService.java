@@ -29,11 +29,6 @@ public class UsuarioService {
 
         Usuario salvo = usuarioRepository.save(usuario);
 
-        return new UsuarioResponse(
-                salvo.getId(),
-                salvo.getNome(),
-                salvo.getEmail(),
-                salvo.getRole()
-        );
+        return UsuarioResponse.fromEntity(salvo);
     }
 }
