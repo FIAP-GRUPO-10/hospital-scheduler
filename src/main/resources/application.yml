@@ -1,0 +1,6 @@
+spring:
+  application:
+    name: hospital-scheduler
+  profiles:
+    # local / docker - quiser utilizar H2 local trocar para local
+    active: local
