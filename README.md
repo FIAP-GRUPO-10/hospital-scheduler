@@ -65,3 +65,38 @@ Observações
 - O Maven usa `pom.xml` na raiz como projeto agregador dos módulos.
 - Cada módulo possui seu próprio `pom.xml`, `Dockerfile` e configuração local em `src/main/resources/application.properties`.
 - Os serviços são isolados por porta para evitar conflitos durante o desenvolvimento local e em containers.
+
+Regras implementadas com base no ADJT
+
+- Médicos e enfermeiros podem registrar e editar consultas no módulo de agendamento.
+- Pacientes só podem consultar seu próprio histórico e seus lembretes.
+- A regra de conflito de agenda impede sobreposição de horários para o mesmo médico, enfermeiro ou paciente.
+- A consulta deve ocorrer em horário comercial e em data futura.
+- O serviço de notificações representa o fluxo assíncrono de lembretes após o agendamento ou edição de consultas.
+
+Autenticação e autorização JWT
+
+- Faça login em cada serviço com POST /api/v1/auth/login usando as credenciais do perfil:
+  - Médico: MED-2001 / medico123
+  - Enfermeiro: ENF-3001 / enfermeiro123
+  - Paciente: PAC-1001 / paciente123
+- Envie o token em Authorization: Bearer <token> nas requisições protegidas.
+
+Endpoints principais do módulo de agendamento
+
+- POST /api/v1/auth/login
+- GET /api/v1/agenda/consultas
+- POST /api/v1/agenda/consultas
+- PUT /api/v1/agenda/consultas/{id}
+
+Endpoints principais do módulo de histórico
+
+- POST /api/v1/auth/login
+- GET /api/v1/historico/consultas
+- GET /api/v1/historico/pacientes/{pacienteId}/consultas
+
+Endpoints principais do módulo de notificações
+
+- POST /api/v1/auth/login
+- GET /api/v1/notificacoes/lembretes
+- POST /api/v1/notificacoes/lembretes
