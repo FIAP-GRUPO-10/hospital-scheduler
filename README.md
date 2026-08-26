@@ -1086,12 +1086,6 @@ CREATE INDEX idx_consulta_data ON consulta(data_hora);
 
 ---
 
-## Licença
-
-Este projeto está sob licença MIT. Veja o arquivo LICENSE para mais detalhes.
-
----
-
 ## Contato & Suporte
 
 Para dúvidas ou problemas:

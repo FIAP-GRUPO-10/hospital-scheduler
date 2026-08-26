@@ -412,16 +412,5 @@ type ConsultaResult {
 ✅ **Comunicação Assíncrona**: Kafka evita acoplamento entre serviços
 ✅ **Histórico Auditável**: Todos os eventos são registrados
 
----
 
-## Próximos Passos
-
-- [ ] Integrar com banco de dados (PostgreSQL, MongoDB)
-- [ ] Implementar autenticação OAuth2
-- [ ] Adicionar paginação ao GraphQL
-- [ ] Implementar rate limiting
-- [ ] Adicionar métricas e monitoring
-- [ ] Integrar com serviço de email (SendGrid, AWS SES)
-- [ ] Implementar versionamento de API
-- [ ] Adicionar testes automatizados
 
