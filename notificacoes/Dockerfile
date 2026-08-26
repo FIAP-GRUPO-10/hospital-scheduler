@@ -10,14 +10,14 @@ COPY notificacoes/src ./notificacoes/src
 COPY historico/pom.xml ./historico/pom.xml
 COPY historico/src ./historico/src
 
-RUN mvn -q -DskipTests -pl agendamento -am clean package
+RUN mvn -q -DskipTests -pl notificacoes -am clean package
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=build /workspace/agendamento/target/*.jar app.jar
+COPY --from=build /workspace/notificacoes/target/*.jar app.jar
 
-EXPOSE 8081
+EXPOSE 8082
 
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
