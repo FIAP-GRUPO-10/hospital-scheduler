@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -17,6 +19,8 @@ import java.util.concurrent.atomic.AtomicLong;
 @Service
 public class NotificacaoService {
 
+    private static final Logger logger = LoggerFactory.getLogger(NotificacaoService.class);
+    
     private final Map<Long, Lembrete> lembretes = new ConcurrentHashMap<>();
     private final AtomicLong sequence = new AtomicLong(1L);
 
@@ -64,7 +68,51 @@ public class NotificacaoService {
         );
 
         lembretes.put(lembrete.id(), lembrete);
+        logger.info("Lembrete criado manualmente: ID={}, Paciente={}", lembrete.id(), request.pacienteId());
         return lembrete;
+    }
+
+    /**
+     * Cria uma notificação automaticamente baseada em eventos de agendamento
+     * Este método é chamado pelo KafkaConsumerService quando eventos chegam
+     */
+    public void criarNotificacaoAutomatica(String pacienteId, String medicoId, LocalDateTime dataConsulta, String mensagem) {
+        Lembrete lembrete = new Lembrete(
+                sequence.getAndIncrement(),
+                pacienteId,
+                medicoId,
+                dataConsulta,
+                mensagem,
+                true
+        );
+
+        lembretes.put(lembrete.id(), lembrete);
+        logger.info("Notificação automática criada: ID={}, Paciente={}, Mensagem={}", lembrete.id(), pacienteId, mensagem);
+        
+        // Aqui você pode adicionar lógica para enviar notificações via email, SMS, push, etc.
+        enviarNotificacao(lembrete);
+    }
+
+    /**
+     * Simula o envio de notificação para o paciente
+     * Em produção, isso poderia enviar um email, SMS, push notification, etc.
+     */
+    private void enviarNotificacao(Lembrete lembrete) {
+        try {
+            logger.info("=== ENVIANDO NOTIFICAÇÃO ===");
+            logger.info("Para: {}", lembrete.pacienteId());
+            logger.info("Médico: {}", lembrete.medicoId());
+            logger.info("Data da Consulta: {}", lembrete.dataConsulta());
+            logger.info("Mensagem: {}", lembrete.mensagem());
+            logger.info("===========================");
+            
+            // TODO: Integrar com serviço de email (SendGrid, AWS SES, etc.)
+            // TODO: Integrar com serviço de SMS (Twilio, AWS SNS, etc.)
+            // TODO: Integrar com push notifications (Firebase Cloud Messaging, etc.)
+            
+        } catch (Exception e) {
+            logger.error("Erro ao enviar notificação para paciente: {}", lembrete.pacienteId(), e);
+        }
     }
 
     private void validarPerfil(Authentication authentication) {

@@ -20,12 +20,21 @@ public class HistoricoService {
     private final AtomicLong sequence = new AtomicLong(1L);
 
     public HistoricoService() {
-        registrarConsulta(new ConsultaHistorico(1L, "PAC-1001", "MED-2001", "ENF-3001",
-                LocalDateTime.now().plusDays(1).withHour(10), "Consulta cardiológica", "AGENDADA"));
-        registrarConsulta(new ConsultaHistorico(2L, "PAC-1001", "MED-2002", "ENF-3002",
-                LocalDateTime.now().minusDays(10), "Acompanhamento anterior", "REALIZADA"));
-        registrarConsulta(new ConsultaHistorico(3L, "PAC-1002", "MED-2001", "ENF-3001",
-                LocalDateTime.now().plusDays(3).withHour(15), "Retorno pós-cirurgia", "AGENDADA"));
+        registrarConsulta(new ConsultaHistorico(1L, "PAC-1001", "João Silva", "joao@example.com",
+                "MED-2001", "Dr. Carlos", "Cardiologia", "ENF-3001",
+                LocalDateTime.now().plusDays(1).withHour(10), "Consulta de acompanhamento",
+                "Consulta cardiológica", "Presencial", "AGENDADA",
+                LocalDateTime.now(), LocalDateTime.now()));
+        registrarConsulta(new ConsultaHistorico(2L, "PAC-1001", "João Silva", "joao@example.com",
+                "MED-2002", "Dra. Maria", "Clínica Geral", "ENF-3002",
+                LocalDateTime.now().minusDays(10), "Acompanhamento anterior",
+                "Acompanhamento clínico", "Presencial", "REALIZADA",
+                LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(10)));
+        registrarConsulta(new ConsultaHistorico(3L, "PAC-1002", "Maria Santos", "maria@example.com",
+                "MED-2001", "Dr. Carlos", "Cardiologia", "ENF-3001",
+                LocalDateTime.now().plusDays(3).withHour(15), "Retorno pós-cirurgia",
+                "Retorno pós-cirurgia", "Presencial", "AGENDADA",
+                LocalDateTime.now(), LocalDateTime.now()));
     }
 
     public List<ConsultaHistorico> listarTodos(Authentication authentication, String pacienteId) {
@@ -78,4 +87,12 @@ public class HistoricoService {
         historico.put(consulta.id(), consulta);
         sequence.updateAndGet(current -> Math.max(current, consulta.id() + 1));
     }
+
+    public void armazenarConsulta(ConsultaHistorico consulta) {
+        // Evitar duplicatas: se consultaId já existe, atualizar; caso contrário, criar
+        if (!historico.containsKey(consulta.id())) {
+            registrarConsulta(consulta);
+        }
+    }
 }
+

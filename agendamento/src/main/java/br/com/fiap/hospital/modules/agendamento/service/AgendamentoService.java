@@ -20,8 +20,10 @@ public class AgendamentoService {
 
     private final Map<Long, Consulta> consultas = new ConcurrentHashMap<>();
     private final AtomicLong sequence = new AtomicLong(1L);
+    private final KafkaProducerService kafkaProducerService;
 
-    public AgendamentoService() {
+    public AgendamentoService(KafkaProducerService kafkaProducerService) {
+        this.kafkaProducerService = kafkaProducerService;
         registrarConsultaSeeded(new Consulta(1L, "PAC-1001", "MED-2001", "ENF-3001",
                 LocalDateTime.now().plusDays(1).withHour(9).withMinute(0), 60,
                 "Consulta cardiológica", "AGENDADA"));
@@ -81,6 +83,10 @@ public class AgendamentoService {
         }
 
         consultas.put(novaConsulta.id(), novaConsulta);
+        
+        // Publicar evento de consulta criada
+        kafkaProducerService.enviarConsultaCriada(novaConsulta);
+        
         return novaConsulta;
     }
 
@@ -114,7 +120,77 @@ public class AgendamentoService {
         }
 
         consultas.put(id, novaVersao);
+        
+        // Publicar evento de consulta atualizada
+        kafkaProducerService.enviarConsultaAtualizada(novaVersao);
+        
         return novaVersao;
+    }
+
+    public void deletarConsulta(Long id, Authentication authentication) {
+        validarPerfilResponsavel(authentication);
+        
+        Consulta consulta = consultas.get(id);
+        if (consulta == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consulta não encontrada.");
+        }
+
+        consultas.remove(id);
+        
+        // Publicar evento de consulta deletada
+        kafkaProducerService.enviarConsultaDeletada(id, consulta);
+    }
+
+    public void cancelarConsulta(Long id, Authentication authentication) {
+        validarPerfilResponsavel(authentication);
+        
+        Consulta consulta = consultas.get(id);
+        if (consulta == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consulta não encontrada.");
+        }
+
+        Consulta consultaCancelada = new Consulta(
+                consulta.id(),
+                consulta.pacienteId(),
+                consulta.medicoId(),
+                consulta.enfermeiroId(),
+                consulta.dataHora(),
+                consulta.duracaoMinutos(),
+                consulta.motivo(),
+                "CANCELADA"
+        );
+
+        consultas.put(id, consultaCancelada);
+        
+        // Publicar evento de consulta cancelada
+        kafkaProducerService.enviarConsultaCancelada(consultaCancelada);
+    }
+
+    public Consulta confirmarConsulta(Long id, Authentication authentication) {
+        validarPerfilResponsavel(authentication);
+        
+        Consulta consulta = consultas.get(id);
+        if (consulta == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consulta não encontrada.");
+        }
+
+        Consulta consultaConfirmada = new Consulta(
+                consulta.id(),
+                consulta.pacienteId(),
+                consulta.medicoId(),
+                consulta.enfermeiroId(),
+                consulta.dataHora(),
+                consulta.duracaoMinutos(),
+                consulta.motivo(),
+                "CONFIRMADA"
+        );
+
+        consultas.put(id, consultaConfirmada);
+        
+        // Publicar evento de consulta confirmada
+        kafkaProducerService.enviarConsultaConfirmada(consultaConfirmada);
+        
+        return consultaConfirmada;
     }
 
     private void validarRequisicao(ConsultaRequest request) {

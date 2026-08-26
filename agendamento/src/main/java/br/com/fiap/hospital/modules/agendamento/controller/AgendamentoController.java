@@ -3,15 +3,10 @@ package br.com.fiap.hospital.modules.agendamento.controller;
 import br.com.fiap.hospital.modules.agendamento.model.Consulta;
 import br.com.fiap.hospital.modules.agendamento.model.ConsultaRequest;
 import br.com.fiap.hospital.modules.agendamento.service.AgendamentoService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -44,10 +39,11 @@ public class AgendamentoController {
     }
 
     @PostMapping("/consultas")
-    public Consulta criarConsulta(
+    public ResponseEntity<Consulta> criarConsulta(
             @RequestBody ConsultaRequest request,
             Authentication authentication) {
-        return agendamentoService.criarConsulta(request, authentication);
+        Consulta consulta = agendamentoService.criarConsulta(request, authentication);
+        return ResponseEntity.status(HttpStatus.CREATED).body(consulta);
     }
 
     @PutMapping("/consultas/{id}")
@@ -56,5 +52,29 @@ public class AgendamentoController {
             @RequestBody ConsultaRequest request,
             Authentication authentication) {
         return agendamentoService.atualizarConsulta(id, request, authentication);
+    }
+
+    @DeleteMapping("/consultas/{id}")
+    public ResponseEntity<Map<String, String>> deletarConsulta(
+            @PathVariable Long id,
+            Authentication authentication) {
+        agendamentoService.deletarConsulta(id, authentication);
+        return ResponseEntity.ok(Map.of("mensagem", "Consulta deletada com sucesso"));
+    }
+
+    @PutMapping("/consultas/{id}/cancelar")
+    public ResponseEntity<Map<String, String>> cancelarConsulta(
+            @PathVariable Long id,
+            Authentication authentication) {
+        agendamentoService.cancelarConsulta(id, authentication);
+        return ResponseEntity.ok(Map.of("mensagem", "Consulta cancelada com sucesso"));
+    }
+
+    @PutMapping("/consultas/{id}/confirmar")
+    public ResponseEntity<Consulta> confirmarConsulta(
+            @PathVariable Long id,
+            Authentication authentication) {
+        Consulta consulta = agendamentoService.confirmarConsulta(id, authentication);
+        return ResponseEntity.ok(consulta);
     }
 }
