@@ -19,24 +19,6 @@ public class HistoricoService {
     private final Map<Long, ConsultaHistorico> historico = new ConcurrentHashMap<>();
     private final AtomicLong sequence = new AtomicLong(1L);
 
-    public HistoricoService() {
-        registrarConsulta(new ConsultaHistorico(1L, "PAC-1001", "João Silva", "joao@example.com",
-                "MED-2001", "Dr. Carlos", "Cardiologia", "ENF-3001",
-                LocalDateTime.now().plusDays(1).withHour(10), "Consulta de acompanhamento",
-                "Consulta cardiológica", "Presencial", "AGENDADA",
-                LocalDateTime.now(), LocalDateTime.now()));
-        registrarConsulta(new ConsultaHistorico(2L, "PAC-1001", "João Silva", "joao@example.com",
-                "MED-2002", "Dra. Maria", "Clínica Geral", "ENF-3002",
-                LocalDateTime.now().minusDays(10), "Acompanhamento anterior",
-                "Acompanhamento clínico", "Presencial", "REALIZADA",
-                LocalDateTime.now().minusDays(10), LocalDateTime.now().minusDays(10)));
-        registrarConsulta(new ConsultaHistorico(3L, "PAC-1002", "Maria Santos", "maria@example.com",
-                "MED-2001", "Dr. Carlos", "Cardiologia", "ENF-3001",
-                LocalDateTime.now().plusDays(3).withHour(15), "Retorno pós-cirurgia",
-                "Retorno pós-cirurgia", "Presencial", "AGENDADA",
-                LocalDateTime.now(), LocalDateTime.now()));
-    }
-
     public List<ConsultaHistorico> listarTodos(Authentication authentication, String pacienteId) {
         if (ehPaciente(authentication)) {
             String pacienteAutenticado = authentication.getName();

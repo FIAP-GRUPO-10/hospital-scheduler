@@ -83,12 +83,21 @@ public class AgendamentoService {
         }
 
         consultas.put(novaConsulta.id(), novaConsulta);
-        
-        // Publicar evento de consulta criada
-        kafkaProducerService.enviarConsultaCriada(novaConsulta);
-        
+
+        try {
+            // Publicar evento de consulta criada
+            kafkaProducerService.enviarConsultaCriada(novaConsulta);
+        } catch (Exception e) {
+            // Logar o erro e não deixar estourar 500
+            System.err.println("Erro ao enviar evento para Kafka: " + e.getMessage());
+            // Opcional: lançar uma exceção mais amigável
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Consulta criada, mas falha ao notificar sistema externo.");
+        }
+
         return novaConsulta;
     }
+
 
     public Consulta atualizarConsulta(Long id, ConsultaRequest request, Authentication authentication) {
         validarPerfilResponsavel(authentication);

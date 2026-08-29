@@ -40,8 +40,7 @@ public class AgendamentoController {
 
     @PostMapping("/consultas")
     public ResponseEntity<Consulta> criarConsulta(
-            @RequestBody ConsultaRequest request,
-            Authentication authentication) {
+            @RequestBody ConsultaRequest request, Authentication authentication) {
         Consulta consulta = agendamentoService.criarConsulta(request, authentication);
         return ResponseEntity.status(HttpStatus.CREATED).body(consulta);
     }
