@@ -1,19 +1,14 @@
-version: '3.8'
-
 services:
   zookeeper:
-    image: bitnami/zookeeper:latest
+    image: zookeeper:3.9
     container_name: hospital-zookeeper
-    environment:
-      ZOO_PORT_NUMBER: 2181
-      ZOO_TICK_TIME: 2000
     ports:
       - "2181:2181"
     networks:
       - hospital-network
 
   kafka:
-    image: bitnami/kafka:latest
+    image: apache/kafka:3.7.0
     container_name: hospital-kafka
     depends_on:
       - zookeeper
@@ -44,7 +39,7 @@ services:
       - hospital-network
 
   mysql:
-    image: mysql:8.0-oracle
+    image: mysql:8.0
     container_name: hospital-mysql
     restart: unless-stopped
     env_file:
@@ -63,8 +58,8 @@ services:
 
   agendamento:
     build:
-      context: ./agendamento
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./agendamento/Dockerfile
     container_name: hospital-agendamento
     depends_on:
       mysql:
@@ -88,8 +83,8 @@ services:
 
   notificacoes:
     build:
-      context: ./notificacoes
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./notificacoes/Dockerfile
     container_name: hospital-notificacoes
     depends_on:
       kafka:
@@ -107,8 +102,8 @@ services:
 
   historico:
     build:
-      context: ./historico
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./historico/Dockerfile
     container_name: hospital-historico
     depends_on:
       mysql:
