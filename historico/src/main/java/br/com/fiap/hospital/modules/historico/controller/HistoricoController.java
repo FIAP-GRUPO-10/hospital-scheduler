@@ -3,12 +3,7 @@ package br.com.fiap.hospital.modules.historico.controller;
 import br.com.fiap.hospital.modules.historico.model.ConsultaHistorico;
 import br.com.fiap.hospital.modules.historico.service.HistoricoService;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
@@ -26,6 +21,15 @@ public class HistoricoController {
     @GetMapping
     public Map<String, String> status() {
         return Map.of("status", "ok");
+    }
+
+
+    @PutMapping("/consultas/{id}")
+    public ConsultaHistorico editarConsulta(
+            @PathVariable Long id,
+            @RequestBody ConsultaHistorico consulta,
+            Authentication authentication) {
+        return historicoService.editarConsulta(id, consulta, authentication);
     }
 
     @GetMapping("/consultas")

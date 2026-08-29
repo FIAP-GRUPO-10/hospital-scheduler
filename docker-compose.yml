@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0-oracle   # versão mais leve que a padrão
     container_name: hospital-mysql
     restart: unless-stopped
     env_file:
@@ -17,109 +17,111 @@ services:
     networks:
       - hospital-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-   agendamento:
-     build:
-       context: .
-       dockerfile: agendamento/Dockerfile
-     container_name: hospital-agendamento
-     depends_on:
-       mysql:
-         condition: service_healthy
-       kafka:
-         condition: service_started
-     env_file:
-       - .env
-     environment:
-       SPRING_PROFILES_ACTIVE: docker
-       MYSQL_HOST: mysql
-       MYSQL_DATABASE: ${MYSQL_DATABASE}
-       MYSQL_USER: ${MYSQL_USER}
-       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-     ports:
-       - "8081:8081"
-     networks:
-       - hospital-network
-     restart: unless-stopped
+  agendamento:
+    build:
+      context: ./agendamento
+      dockerfile: Dockerfile
+    container_name: hospital-agendamento
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8081:8081"
+    networks:
+      - hospital-network
+    restart: unless-stopped
 
-   notificacoes:
-     build:
-       context: .
-       dockerfile: notificacoes/Dockerfile
-     container_name: hospital-notificacoes
-     depends_on:
-       kafka:
-         condition: service_started
-     environment:
-       SPRING_PROFILES_ACTIVE: docker
-       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-     ports:
-       - "8082:8082"
-     networks:
-       - hospital-network
-     restart: unless-stopped
+  notificacoes:
+    build:
+      context: ./notificacoes
+      dockerfile: Dockerfile
+    container_name: hospital-notificacoes
+    depends_on:
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8082:8082"
+    networks:
+      - hospital-network
+    restart: unless-stopped
 
-   historico:
-     build:
-       context: .
-       dockerfile: historico/Dockerfile
-     container_name: hospital-historico
-     depends_on:
-       mysql:
-         condition: service_healthy
-       kafka:
-         condition: service_started
-     env_file:
-       - .env
-     environment:
-       SPRING_PROFILES_ACTIVE: docker
-       MYSQL_HOST: mysql
-       MYSQL_DATABASE: ${MYSQL_DATABASE}
-       MYSQL_USER: ${MYSQL_USER}
-       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-     ports:
-       - "8083:8083"
-     networks:
-       - hospital-network
-     restart: unless-stopped
+  historico:
+    build:
+      context: ./historico
+      dockerfile: Dockerfile
+    container_name: hospital-historico
+    depends_on:
+      mysql:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+    ports:
+      - "8083:8083"
+    networks:
+      - hospital-network
+    restart: unless-stopped
 
-   zookeeper:
-     image: confluentinc/cp-zookeeper:latest
-     container_name: hospital-zookeeper
-     environment:
-       ZOOKEEPER_CLIENT_PORT: 2181
-       ZOOKEEPER_TICK_TIME: 2000
-     ports:
-       - "2181:2181"
-     networks:
-       - hospital-network
-     restart: unless-stopped
+  zookeeper:
+    image: bitnami/zookeeper:latest   # versão leve baseada em Debian slim
+    container_name: hospital-zookeeper
+    environment:
+      ZOO_PORT_NUMBER: 2181
+      ZOO_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - hospital-network
+    restart: unless-stopped
 
-   kafka:
-     image: confluentinc/cp-kafka:latest
-     container_name: hospital-kafka
-     depends_on:
-       - zookeeper
-     ports:
-       - "9092:9092"
-       - "29092:29092"
-     environment:
-       KAFKA_BROKER_ID: 1
-       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
-       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-     networks:
-       - hospital-network
-     restart: unless-stopped
+  kafka:
+    image: bitnami/kafka:latest       # versão leve baseada em Debian slim
+    container_name: hospital-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: hospital-zookeeper:2181
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
+    networks:
+      - hospital-network
+    restart: unless-stopped
 
 volumes:
   mysql_data:

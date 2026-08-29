@@ -1,44 +1,36 @@
 version: '3.8'
 
 services:
-  # Zookeeper - Dependência do Kafka
   zookeeper:
-    image: confluentinc/cp-zookeeper:7.5.0
-    container_name: zookeeper
+    image: bitnami/zookeeper:latest
+    container_name: hospital-zookeeper
     environment:
-      ZOOKEEPER_CLIENT_PORT: 2181
-      ZOOKEEPER_TICK_TIME: 2000
+      ZOO_PORT_NUMBER: 2181
+      ZOO_TICK_TIME: 2000
     ports:
       - "2181:2181"
     networks:
       - hospital-network
 
-  # Kafka Message Broker
   kafka:
-    image: confluentinc/cp-kafka:7.5.0
-    container_name: kafka
+    image: bitnami/kafka:latest
+    container_name: hospital-kafka
     depends_on:
       - zookeeper
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_ZOOKEEPER_CONNECT: hospital-zookeeper:2181
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE: "true"
     ports:
       - "9092:9092"
       - "29092:29092"
     networks:
       - hospital-network
-    healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
-      interval: 5s
-      timeout: 10s
-      retries: 5
 
-  # Kafdrop - UI para Kafka (opcional, para debugar)
   kafdrop:
     image: obsidiandynamics/kafdrop:latest
     container_name: kafdrop
@@ -47,103 +39,101 @@ services:
     ports:
       - "9000:9000"
     environment:
-      KAFKA_BROKERCONNECT: kafka:29092
-      JVM_OPTS: "-Xms32M -Xmx64M"
-      SERVER_SERVLET_CONTEXTPATH: "/"
+      KAFKA_BROKERCONNECT: kafka:9092
     networks:
       - hospital-network
 
-  # PostgreSQL Database (Opcional para produção)
-  postgres:
-    image: postgres:15-alpine
-    container_name: postgres
+  mysql:
+    image: mysql:8.0-oracle
+    container_name: hospital-mysql
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: hospital_db
-      POSTGRES_USER: hospital
-      POSTGRES_PASSWORD: password123
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "5432:5432"
+      - "3307:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - mysql_data:/var/lib/mysql
     networks:
       - hospital-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U hospital"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # Serviço de Agendamento
   agendamento:
     build:
       context: ./agendamento
       dockerfile: Dockerfile
-    container_name: agendamento
+    container_name: hospital-agendamento
     depends_on:
-      kafka:
+      mysql:
         condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
     environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SERVER_PORT: 8081
     ports:
       - "8081:8081"
     networks:
       - hospital-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/api/v1/agenda"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # Serviço de Notificações
   notificacoes:
     build:
       context: ./notificacoes
       dockerfile: Dockerfile
-    container_name: notificacoes
+    container_name: hospital-notificacoes
     depends_on:
       kafka:
-        condition: service_healthy
+        condition: service_started
+    env_file:
+      - .env
     environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SERVER_PORT: 8082
     ports:
       - "8082:8082"
     networks:
       - hospital-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8082/api/v1/notificacoes"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
-  # Serviço de Histórico com GraphQL
   historico:
     build:
       context: ./historico
       dockerfile: Dockerfile
-    container_name: historico
+    container_name: hospital-historico
     depends_on:
-      kafka:
+      mysql:
         condition: service_healthy
+      kafka:
+        condition: service_started
+    env_file:
+      - .env
     environment:
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      SPRING_PROFILES_ACTIVE: docker
+      MYSQL_HOST: mysql
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
       SERVER_PORT: 8083
     ports:
       - "8083:8083"
     networks:
       - hospital-network
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/api/v1/historico"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
 
 networks:
   hospital-network:
     driver: bridge
 
 volumes:
-  postgres_data:
+  mysql_data:
     driver: local
-

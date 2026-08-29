@@ -40,19 +40,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/historico").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/historico/consultas").hasAnyRole("MEDICO", "ENFERMEIRO")
-                .requestMatchers(HttpMethod.GET, "/api/v1/historico/pacientes/**").hasAnyRole("MEDICO", "ENFERMEIRO", "PACIENTE")
-                .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/historico").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/historico/consultas").hasAnyRole("MEDICO", "ENFERMEIRO")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/historico/consultas").hasAnyRole("MEDICO", "ENFERMEIRO")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/historico/consultas/**").hasRole("MEDICO")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/historico/consultas/**").hasRole("MEDICO")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/historico/pacientes/**").hasAnyRole("MEDICO", "ENFERMEIRO", "PACIENTE")
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
         return http.build();
     }
+
 
     @Bean
     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {

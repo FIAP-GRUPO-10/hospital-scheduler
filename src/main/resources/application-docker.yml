@@ -9,13 +9,13 @@ server:
 # ==============================
 spring:
   application:
-    name: food # Nome da aplicação
+    name: hospital # Nome da aplicação
 
   # ==========================
   # BANCO DE DADOS (MYSQL)
   # ==========================
   datasource:
-    url: jdbc:mysql://food-mysql:3306/fooddb # Nome do serviço no docker-compose
+    url: jdbc:mysql://hospital-mysql:3306/hospitaldb # Nome do serviço no docker-compose
     username: ${MYSQL_USER} # Vem do .env
     password: ${MYSQL_PASSWORD} # Vem do .env
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -24,7 +24,7 @@ spring:
     hikari:
       maximum-pool-size: 10 # Máximo de conexões
       minimum-idle: 5 # Conexões mínimas ociosas
-      pool-name: HikariPool-Food # Nome do pool (log/debug)
+      pool-name: HikariPool-Hospital # Nome do pool (log/debug)
       auto-commit: true # Commit automático
 
   # ==========================
