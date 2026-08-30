@@ -45,6 +45,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/historico").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                        .requestMatchers("/graphql").permitAll()
+                        .requestMatchers("/graphiql").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/historico/consultas").hasAnyRole("MEDICO", "ENFERMEIRO")
                         .requestMatchers(HttpMethod.POST, "/api/v1/historico/consultas").hasAnyRole("MEDICO", "ENFERMEIRO")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/historico/consultas/**").hasRole("MEDICO")

@@ -24,12 +24,6 @@ public class AgendamentoService {
 
     public AgendamentoService(KafkaProducerService kafkaProducerService) {
         this.kafkaProducerService = kafkaProducerService;
-        registrarConsultaSeeded(new Consulta(1L, "PAC-1001", "MED-2001", "ENF-3001",
-                LocalDateTime.now().plusDays(1).withHour(9).withMinute(0), 60,
-                "Consulta cardiológica", "AGENDADA"));
-        registrarConsultaSeeded(new Consulta(2L, "PAC-1002", "MED-2002", "ENF-3002",
-                LocalDateTime.now().plusDays(2).withHour(14).withMinute(0), 45,
-                "Acompanhamento clínico", "AGENDADA"));
     }
 
     public Consulta buscarPorId(Long id, Authentication authentication) {

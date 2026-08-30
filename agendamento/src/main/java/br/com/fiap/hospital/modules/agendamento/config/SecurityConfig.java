@@ -40,21 +40,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/agenda").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/agenda/consultas").hasAnyRole("MEDICO", "ENFERMEIRO", "PACIENTE")
-                .requestMatchers(HttpMethod.GET, "/api/v1/agenda/consultas/**").hasAnyRole("MEDICO", "ENFERMEIRO", "PACIENTE")
-                .requestMatchers(HttpMethod.POST, "/api/v1/agenda/consultas").hasAnyRole("MEDICO", "ENFERMEIRO")
-                .requestMatchers(HttpMethod.PUT, "/api/v1/agenda/consultas/**").hasAnyRole("MEDICO", "ENFERMEIRO")
-                .anyRequest().authenticated()
-            )
-            .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
+                .csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/agenda").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/agenda/consultas").hasAnyRole("MEDICO", "ENFERMEIRO", "PACIENTE")
+                        .requestMatchers(HttpMethod.GET, "/api/v1/agenda/consultas/**").hasAnyRole("MEDICO", "ENFERMEIRO", "PACIENTE")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/agenda/consultas").hasAnyRole("MEDICO", "ENFERMEIRO")
+                        .requestMatchers(HttpMethod.PUT, "/api/v1/agenda/consultas/**").hasAnyRole("MEDICO", "ENFERMEIRO")
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
+                        .anyRequest().authenticated()
+                )
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter())));
 
         return http.build();
     }
+
 
     @Bean
     public AuthenticationProvider authenticationProvider(UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
