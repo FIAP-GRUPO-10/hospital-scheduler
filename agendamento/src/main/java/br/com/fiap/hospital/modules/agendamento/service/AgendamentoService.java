@@ -20,14 +20,10 @@ public class AgendamentoService {
 
     private final Map<Long, Consulta> consultas = new ConcurrentHashMap<>();
     private final AtomicLong sequence = new AtomicLong(1L);
+    private final KafkaProducerService kafkaProducerService;
 
-    public AgendamentoService() {
-        registrarConsultaSeeded(new Consulta(1L, "PAC-1001", "MED-2001", "ENF-3001",
-                LocalDateTime.now().plusDays(1).withHour(9).withMinute(0), 60,
-                "Consulta cardiológica", "AGENDADA"));
-        registrarConsultaSeeded(new Consulta(2L, "PAC-1002", "MED-2002", "ENF-3002",
-                LocalDateTime.now().plusDays(2).withHour(14).withMinute(0), 45,
-                "Acompanhamento clínico", "AGENDADA"));
+    public AgendamentoService(KafkaProducerService kafkaProducerService) {
+        this.kafkaProducerService = kafkaProducerService;
     }
 
     public Consulta buscarPorId(Long id, Authentication authentication) {
@@ -81,8 +77,21 @@ public class AgendamentoService {
         }
 
         consultas.put(novaConsulta.id(), novaConsulta);
+
+        try {
+            // Publicar evento de consulta criada
+            kafkaProducerService.enviarConsultaCriada(novaConsulta);
+        } catch (Exception e) {
+            // Logar o erro e não deixar estourar 500
+            System.err.println("Erro ao enviar evento para Kafka: " + e.getMessage());
+            // Opcional: lançar uma exceção mais amigável
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,
+                    "Consulta criada, mas falha ao notificar sistema externo.");
+        }
+
         return novaConsulta;
     }
+
 
     public Consulta atualizarConsulta(Long id, ConsultaRequest request, Authentication authentication) {
         validarPerfilResponsavel(authentication);
@@ -114,7 +123,77 @@ public class AgendamentoService {
         }
 
         consultas.put(id, novaVersao);
+        
+        // Publicar evento de consulta atualizada
+        kafkaProducerService.enviarConsultaAtualizada(novaVersao);
+        
         return novaVersao;
+    }
+
+    public void deletarConsulta(Long id, Authentication authentication) {
+        validarPerfilResponsavel(authentication);
+        
+        Consulta consulta = consultas.get(id);
+        if (consulta == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consulta não encontrada.");
+        }
+
+        consultas.remove(id);
+        
+        // Publicar evento de consulta deletada
+        kafkaProducerService.enviarConsultaDeletada(id, consulta);
+    }
+
+    public void cancelarConsulta(Long id, Authentication authentication) {
+        validarPerfilResponsavel(authentication);
+        
+        Consulta consulta = consultas.get(id);
+        if (consulta == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consulta não encontrada.");
+        }
+
+        Consulta consultaCancelada = new Consulta(
+                consulta.id(),
+                consulta.pacienteId(),
+                consulta.medicoId(),
+                consulta.enfermeiroId(),
+                consulta.dataHora(),
+                consulta.duracaoMinutos(),
+                consulta.motivo(),
+                "CANCELADA"
+        );
+
+        consultas.put(id, consultaCancelada);
+        
+        // Publicar evento de consulta cancelada
+        kafkaProducerService.enviarConsultaCancelada(consultaCancelada);
+    }
+
+    public Consulta confirmarConsulta(Long id, Authentication authentication) {
+        validarPerfilResponsavel(authentication);
+        
+        Consulta consulta = consultas.get(id);
+        if (consulta == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consulta não encontrada.");
+        }
+
+        Consulta consultaConfirmada = new Consulta(
+                consulta.id(),
+                consulta.pacienteId(),
+                consulta.medicoId(),
+                consulta.enfermeiroId(),
+                consulta.dataHora(),
+                consulta.duracaoMinutos(),
+                consulta.motivo(),
+                "CONFIRMADA"
+        );
+
+        consultas.put(id, consultaConfirmada);
+        
+        // Publicar evento de consulta confirmada
+        kafkaProducerService.enviarConsultaConfirmada(consultaConfirmada);
+        
+        return consultaConfirmada;
     }
 
     private void validarRequisicao(ConsultaRequest request) {

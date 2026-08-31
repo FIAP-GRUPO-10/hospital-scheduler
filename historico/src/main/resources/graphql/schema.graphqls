@@ -1,0 +1,68 @@
+type Query {
+  # Retorna todas as consultas de um paciente
+  pacienteConsultas(pacienteId: ID!): [Consulta!]!
+
+  # Retorna apenas consultas futuras de um paciente
+  pacienteConsultasFuturas(pacienteId: ID!): [Consulta!]!
+
+  # Retorna apenas consultas passadas de um paciente
+  pacienteConsultasPassadas(pacienteId: ID!): [Consulta!]!
+
+  # Busca consultas por médico
+  medicoConsultas(medicoId: ID!): [Consulta!]!
+
+  # Busca consulta específica pelo ID
+  consulta(id: ID!): Consulta
+
+  # Busca consultas com filtros avançados
+  consultasFiltered(filtro: ConsultaFiltro!): [Consulta!]!
+}
+
+type Consulta {
+  id: ID!
+  pacienteId: ID!
+  nomePaciente: String!
+  emailPaciente: String!
+  medicoId: ID!
+  nomeMedico: String!
+  especialidade: String!
+  dataHora: String!
+  dataHoraFormatted: String!
+  descricao: String
+  status: StatusConsulta!
+  tipoConsulta: String
+  criadaEm: String!
+  atualizadaEm: String
+}
+
+enum StatusConsulta {
+  AGENDADA
+  CONFIRMADA
+  CONCLUIDA
+  CANCELADA
+  REMARCADA
+}
+
+input ConsultaFiltro {
+  pacienteId: ID
+  medicoId: ID
+  status: StatusConsulta
+  dataInicio: String
+  dataFim: String
+  especialidade: String
+}
+
+type Mutation {
+  # Cancela uma consulta
+  cancelarConsulta(id: ID!): ConsultaResult!
+
+  # Marca consulta como concluída
+  concluirConsulta(id: ID!): ConsultaResult!
+}
+
+type ConsultaResult {
+  sucesso: Boolean!
+  mensagem: String!
+  consulta: Consulta
+}
+

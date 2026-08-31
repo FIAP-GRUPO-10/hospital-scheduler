@@ -1062,27 +1062,6 @@ CREATE INDEX idx_consulta_data ON consulta(data_hora);
 
 ---
 
-## Segurança
-
-### ⚠️ Em Desenvolvimento
-- Senhas padrão são usadas
-- Sem HTTPS
-- Sem validação de taxa de requisição
-
-### 🔒 Para Produção
-- [ ] Implementar HTTPS/TLS
-- [ ] Usar secrets management (Vault, AWS Secrets Manager)
-- [ ] Implementar rate limiting
-- [ ] Adicionar CORS apropriado
-- [ ] Implementar SASL/SSL para Kafka
-- [ ] Usar prepared statements (já implementado)
-- [ ] Adicionar logging e auditoria
-- [ ] Implementar alertas de segurança
-- [ ] Realizar penetration testing
-- [ ] Backup automático de dados
-
----
-
 ## Stack Técnico
 
 | Componente | Versão | Função |
@@ -1098,37 +1077,10 @@ CREATE INDEX idx_consulta_data ON consulta(data_hora);
 
 ---
 
-## Documentação Adicional
-
-- 📖 [KAFKA_SETUP.md](./KAFKA_SETUP.md) - Configuração completa do Kafka
-- 🚀 [KAFKA_QUICK_START.md](./KAFKA_QUICK_START.md) - Quick start Kafka
-- 📝 [MIGRATION_SUMMARY.md](./MIGRATION_SUMMARY.md) - Resumo de migração RabbitMQ → Kafka
-- 📚 [Spring Boot Docs](https://spring.io/projects/spring-boot)
-- 🔗 [Spring Kafka Docs](https://spring.io/projects/spring-kafka)
-- 🐳 [Docker Docs](https://docs.docker.com/)
-
----
-
-## Contribuindo
-
-1. Fork o repositório
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
----
-
-## Licença
-
-Este projeto está sob licença MIT. Veja o arquivo LICENSE para mais detalhes.
-
----
-
 ## Contato & Suporte
 
 Para dúvidas ou problemas:
-1. Verificar documentação (README.md, KAFKA_SETUP.md)
+1. Verificar documentação (README.md)
 2. Consultar logs: `docker-compose logs -f <serviço>`
 3. Teste endpoints com Postman: `postman/Hospital-Scheduler-Local.postman_collection.json`
 

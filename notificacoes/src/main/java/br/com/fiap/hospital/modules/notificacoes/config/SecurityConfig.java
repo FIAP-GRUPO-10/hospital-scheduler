@@ -1,12 +1,13 @@
 package br.com.fiap.hospital.modules.notificacoes.config;
 
+import br.com.fiap.hospital.modules.notificacoes.constants.SecurityConstants;
+import br.com.fiap.hospital.modules.notificacoes.constants.UserConstants;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -18,7 +19,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
@@ -27,15 +27,11 @@ import org.springframework.security.web.SecurityFilterChain;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
 import java.util.List;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    private static final String SECRET = "hospital-scheduler-secret-key-2026-very-long-value";
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,6 +40,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
+                .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/notificacoes").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/notificacoes/lembretes").hasAnyRole("MEDICO", "ENFERMEIRO", "PACIENTE")
@@ -71,20 +68,25 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         InMemoryUserDetailsManager manager = new InMemoryUserDetailsManager();
-        manager.createUser(User.withUsername("MED-2001")
-                .password(passwordEncoder().encode("medico123"))
-                .roles("MEDICO")
+        manager.createUser(User.withUsername(UserConstants.MEDICO_USERNAME)
+                .password(passwordEncoder().encode(UserConstants.MEDICO_PASSWORD))
+                .roles(UserConstants.MEDICO_ROLE)
                 .build());
-        manager.createUser(User.withUsername("ENF-3001")
-                .password(passwordEncoder().encode("enfermeiro123"))
-                .roles("ENFERMEIRO")
+        manager.createUser(User.withUsername(UserConstants.ENFERMEIRO_USERNAME)
+                .password(passwordEncoder().encode(UserConstants.ENFERMEIRO_PASSWORD))
+                .roles(UserConstants.ENFERMEIRO_ROLE)
                 .build());
-        manager.createUser(User.withUsername("PAC-1001")
-                .password(passwordEncoder().encode("paciente123"))
-                .roles("PACIENTE")
+        manager.createUser(User.withUsername(UserConstants.PACIENTE1_USERNAME)
+                .password(passwordEncoder().encode(UserConstants.PACIENTE_PASSWORD))
+                .roles(UserConstants.PACIENTE_ROLE)
+                .build());
+        manager.createUser(User.withUsername(UserConstants.PACIENTE2_USERNAME)
+                .password(passwordEncoder().encode(UserConstants.PACIENTE_PASSWORD))
+                .roles(UserConstants.PACIENTE_ROLE)
                 .build());
         return manager;
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -93,7 +95,7 @@ public class SecurityConfig {
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKey key = new SecretKeySpec(SECRET.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+        SecretKey key = new SecretKeySpec(SecurityConstants.SECRET_BYTES, SecurityConstants.HMAC_ALGORITHM);
         return NimbusJwtDecoder.withSecretKey(key).build();
     }
 

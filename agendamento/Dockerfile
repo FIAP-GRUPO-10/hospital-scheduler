@@ -1,22 +1,26 @@
+# Etapa de build
 FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /workspace
 
-COPY pom.xml ./
-COPY agendamento/pom.xml ./agendamento/pom.xml
-COPY agendamento/src ./agendamento/src
-COPY notificacoes/pom.xml ./notificacoes/pom.xml
-COPY notificacoes/src ./notificacoes/src
-COPY historico/pom.xml ./historico/pom.xml
-COPY historico/src ./historico/src
+# Copia o pom.xml raiz
+COPY pom.xml ./pom.xml
 
+# Copia todos os módulos necessários
+COPY agendamento ./agendamento
+COPY notificacoes ./notificacoes
+COPY historico ./historico
+
+# Compila apenas o módulo agendamento
 RUN mvn -q -DskipTests -pl agendamento -am clean package
 
+# Etapa de runtime
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=build /workspace/agendamento/target/*.jar app.jar
+# Copia apenas o JAR reempacotado (ignora .original)
+COPY --from=build /workspace/agendamento/target/agendamento-1.0.0.jar app.jar
 
 EXPOSE 8081
 
