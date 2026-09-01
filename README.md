@@ -1095,7 +1095,7 @@ CREATE INDEX idx_consulta_data ON consulta(data_hora);
 Para dúvidas ou problemas:
 1. Verificar documentação (README.md)
 2. Consultar logs: `docker-compose logs -f <serviço>`
-3. Teste endpoints com Postman: `postman/Hospital-Scheduler-Local.postman_collection.json`
+3. Teste endpoints com Postman: `postman/Hospital Scheduler - Docker.postman_collection.json`
 
 ---
 
