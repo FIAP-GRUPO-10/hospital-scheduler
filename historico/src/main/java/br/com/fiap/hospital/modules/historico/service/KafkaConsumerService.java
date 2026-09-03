@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -22,15 +23,13 @@ public class KafkaConsumerService {
     private final HistoricoService historicoService;
     private final ObjectMapper objectMapper;
 
-    public KafkaConsumerService(HistoricoService historicoService, ObjectMapper objectMapper) {
+    public KafkaConsumerService(HistoricoService historicoService, ObjectMapper kafkaObjectMapper) {
         this.historicoService = historicoService;
-        this.objectMapper = objectMapper;
+        this.objectMapper = kafkaObjectMapper;
     }
 
     /**
      * Listen for messages from agendamento-events topic
-     *
-     * @param message the received message
      */
     @KafkaListener(topics = "agendamento-events", groupId = "historico-group", containerFactory = "kafkaListenerContainerFactory")
     public void listenAgendamentoEvents(String message) {
@@ -39,9 +38,7 @@ public class KafkaConsumerService {
     }
 
     /**
-     * Listen for messages from notificacoes topic
-     *
-     * @param message the received message
+     * Listen for messages from notificacao-topic
      */
     @KafkaListener(topics = "notificacao-topic", groupId = "historico-group", containerFactory = "kafkaListenerContainerFactory")
     public void listenNotificacoes(String message) {
@@ -51,8 +48,6 @@ public class KafkaConsumerService {
 
     /**
      * Save message to history database
-     *
-     * @param messageJson the message to save
      */
     private void saveToHistory(String messageJson) {
         try {
@@ -60,55 +55,122 @@ public class KafkaConsumerService {
             String tipo = (String) evento.get("tipo");
             
             if (tipo != null && tipo.startsWith("CONSULTA_")) {
-                // Criar um registro de histórico a partir do evento
                 ConsultaHistorico consulta = criarConsultaHistorico(evento);
                 historicoService.armazenarConsulta(consulta);
                 logger.info("Consulta armazenada no histórico: ID={}, Tipo={}", evento.get("consultaId"), tipo);
             }
         } catch (Exception e) {
-            logger.error("Error saving to history: {}", messageJson, e);
+            logger.error("Erro ao processar mensagem Kafka: {}", messageJson, e);
         }
     }
 
     private ConsultaHistorico criarConsultaHistorico(Map<String, Object> evento) {
-        Long consultaId = ((Number) evento.get("consultaId")).longValue();
-        String pacienteId = (String) evento.get("pacienteId");
-        String medicoId = (String) evento.get("medicoId");
-        String enfermeiroId = (String) evento.get("enfermeiroId");
-        
-        // Parse dataHora
-        LocalDateTime dataHora = LocalDateTime.now();
-        Object dataHoraObj = evento.get("dataHora");
-        if (dataHoraObj instanceof String) {
-            try {
-                dataHora = LocalDateTime.parse((String) dataHoraObj);
-            } catch (Exception e) {
-                logger.warn("Could not parse dataHora from event");
-            }
-        }
-        
-        String motivo = (String) evento.get("motivo");
-        String status = (String) evento.get("status");
-        String tipo = (String) evento.get("tipo");
-        
-        return new ConsultaHistorico(
-            consultaId,
-            pacienteId,
-            "Paciente-" + pacienteId,  // Placeholder para nome
-            pacienteId + "@hospital.com", // Placeholder para email
-            medicoId,
-            "Médico-" + medicoId,  // Placeholder para nome
-            "Geral",  // Placeholder para especialidade
-            enfermeiroId,
-            dataHora,
-            "Consulta " + tipo,
-            motivo,
-            "Presencial",
-            status,
-            LocalDateTime.now(),
-            LocalDateTime.now()
-        );
-    }
+         Long consultaId = extractLong(evento.get("consultaId"));
+         String pacienteId = extractString(evento.get("pacienteId"));
+         String medicoId = extractString(evento.get("medicoId"));
+         String enfermeiroId = extractString(evento.get("enfermeiroId"));
+         String motivo = extractString(evento.get("motivo"));
+         String status = extractString(evento.get("status"));
+         String tipo = extractString(evento.get("tipo"));
+
+         LocalDateTime dataHora = extractLocalDateTime(evento.get("dataHora"));
+         LocalDateTime timestamp = extractLocalDateTime(evento.get("timestamp"));
+
+         return new ConsultaHistorico(
+             consultaId,
+             pacienteId,
+             "Paciente-" + pacienteId,
+             pacienteId + "@hospital.com",
+             medicoId,
+             "Médico-" + medicoId,
+             "Geral",
+             enfermeiroId,
+             dataHora,
+             "Consulta " + tipo,
+             motivo,
+             "Presencial",
+             status,
+             timestamp,
+             timestamp
+         );
+     }
+
+    /**
+     * Extrai String de um objeto que pode ser String ou List
+     */
+    private String extractString(Object obj) {
+         if (obj == null) {
+             return "";
+         }
+         if (obj instanceof String) {
+             return (String) obj;
+         }
+         if (obj instanceof List) {
+             List<?> list = (List<?>) obj;
+             if (!list.isEmpty()) {
+                 return list.get(0).toString();
+             }
+             return "";
+         }
+         return obj.toString();
+     }
+
+    /**
+     * Extrai Long de um objeto
+     */
+    private Long extractLong(Object obj) {
+         if (obj == null) {
+             return 0L;
+         }
+         if (obj instanceof Number) {
+             return ((Number) obj).longValue();
+         }
+         if (obj instanceof String) {
+             try {
+                 return Long.parseLong((String) obj);
+             } catch (NumberFormatException e) {
+                 return 0L;
+             }
+         }
+         return 0L;
+     }
+
+    /**
+     * Extrai LocalDateTime de um objeto que pode ser String ou List<Integer>
+     */
+    private LocalDateTime extractLocalDateTime(Object obj) {
+         if (obj == null) {
+             return LocalDateTime.now();
+         }
+         if (obj instanceof LocalDateTime) {
+             return (LocalDateTime) obj;
+         }
+         if (obj instanceof String) {
+             try {
+                 return LocalDateTime.parse((String) obj);
+             } catch (Exception e) {
+                 logger.warn("Could not parse datetime string: {}", obj);
+                 return LocalDateTime.now();
+             }
+         }
+         if (obj instanceof List) {
+             List<?> list = (List<?>) obj;
+             if (list.size() >= 5) {
+                 try {
+                     int year = ((Number) list.get(0)).intValue();
+                     int month = ((Number) list.get(1)).intValue();
+                     int day = ((Number) list.get(2)).intValue();
+                     int hour = ((Number) list.get(3)).intValue();
+                     int minute = ((Number) list.get(4)).intValue();
+                     return LocalDateTime.of(year, month, day, hour, minute);
+                 } catch (Exception e) {
+                     logger.warn("Could not parse datetime list: {}", obj);
+                     return LocalDateTime.now();
+                 }
+             }
+         }
+         return LocalDateTime.now();
+     }
 }
 
 

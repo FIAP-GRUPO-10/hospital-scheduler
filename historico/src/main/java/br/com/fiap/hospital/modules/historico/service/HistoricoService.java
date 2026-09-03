@@ -41,7 +41,7 @@ public class HistoricoService {
     }
 
     public List<ConsultaHistorico> listarConsultasPaciente(String pacienteId, boolean somenteFuturas,
-            Authentication authentication) {
+                                                           Authentication authentication) {
         if (pacienteId == null || pacienteId.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Paciente obrigatório.");
         }
@@ -58,7 +58,8 @@ public class HistoricoService {
                 .filter(consulta -> pacienteId.equalsIgnoreCase(consulta.pacienteId()))
                 .filter(consulta -> !somenteFuturas || consulta.dataHora().isAfter(LocalDateTime.now()))
                 .toList();
-    }
+     }
+
 
     private boolean ehPaciente(Authentication authentication) {
         return authentication != null && authentication.getAuthorities().stream()
@@ -70,25 +71,25 @@ public class HistoricoService {
         sequence.updateAndGet(current -> Math.max(current, consulta.id() + 1));
     }
 
+    /**
+     * Armazena uma consulta no histórico
+     */
     public void armazenarConsulta(ConsultaHistorico consulta) {
-        // Evitar duplicatas: se consultaId já existe, atualizar; caso contrário, criar
-        if (!historico.containsKey(consulta.id())) {
+        if (consulta != null && consulta.id() != null && !historico.containsKey(consulta.id())) {
             registrarConsulta(consulta);
         }
     }
 
-    public ConsultaHistorico editarConsulta(Long id, ConsultaHistorico consulta, Authentication authentication) {
+     public ConsultaHistorico editarConsulta(Long id, ConsultaHistorico consulta, Authentication authentication) {
         if (id == null || !historico.containsKey(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consulta não encontrada.");
         }
-        // Verifica se usuário é médico
         boolean ehMedico = authentication != null && authentication.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_MEDICO"));
         if (!ehMedico) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Somente médicos podem editar consultas.");
         }
         ConsultaHistorico existente = historico.get(id);
-        // Cria novo objeto com campos atualizados
         ConsultaHistorico atualizado = new ConsultaHistorico(
                 id,
                 consulta.pacienteId() != null ? consulta.pacienteId() : existente.pacienteId(),
@@ -103,14 +104,11 @@ public class HistoricoService {
                 consulta.motivo() != null ? consulta.motivo() : existente.motivo(),
                 consulta.tipoConsulta() != null ? consulta.tipoConsulta() : existente.tipoConsulta(),
                 consulta.status() != null ? consulta.status() : existente.status(),
-                existente.criadaEm(), // mantém a data original de criação
-                LocalDateTime.now()   // atualiza a data de edição
+                existente.criadaEm(),
+                LocalDateTime.now()
         );
 
         historico.put(id, atualizado);
         return atualizado;
     }
-
-
 }
-

@@ -23,6 +23,11 @@ services:
       - "8081:8081"
     networks:
       - hospital-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   notificacoes:
     build:
@@ -42,6 +47,11 @@ services:
       - "8082:8082"
     networks:
       - hospital-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   historico:
     build:
@@ -67,6 +77,11 @@ services:
       - "8083:8083"
     networks:
       - hospital-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
 networks:
   hospital-network:

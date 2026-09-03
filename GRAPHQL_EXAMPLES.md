@@ -435,3 +435,17 @@ type ConsultaResult {
 4. **Para segurança**: Sempre inclua o token JWT no header Authorization
 5. **Para logging**: Verifique os logs do serviço para debug de eventos Kafka
 
+---
+
+## 👥 Autores
+
+| Nome | RM |
+|------|----|
+| Thiago Vanzele | RM374158 |
+| Luiz Eduardo Gambeti | RM373030 |
+| Sandoval Bento da Silva | RM370706 |
+
+---
+
+**Versão:** 1.0.0  
+**Data da Última Atualização:** Setembro 2026

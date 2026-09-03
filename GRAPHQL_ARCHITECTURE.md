@@ -412,5 +412,20 @@ type ConsultaResult {
 ✅ **Comunicação Assíncrona**: Kafka evita acoplamento entre serviços
 ✅ **Histórico Auditável**: Todos os eventos são registrados
 
+---
+
+## 👥 Autores
+
+| Nome | RM |
+|------|----|
+| Thiago Vanzele | RM374158 |
+| Luiz Eduardo Gambeti | RM373030 |
+| Sandoval Bento da Silva | RM370706 |
+
+---
+
+**Versão:** 1.0.0  
+**Data da Última Atualização:** Setembro 2026
+
 
 

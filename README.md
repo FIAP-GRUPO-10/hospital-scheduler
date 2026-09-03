@@ -15,6 +15,9 @@
 - [Regras de Negócio](#regras-de-negócio)
 - [Integração Kafka](#integração-kafka)
 - [Troubleshooting](#troubleshooting)
+- [Stack Técnico](#stack-técnico)
+- [Autores](#autores)
+- [Contato & Suporte](#contato--suporte)
 
 ---
 
@@ -1077,15 +1080,25 @@ CREATE INDEX idx_consulta_data ON consulta(data_hora);
 
 ---
 
+## 👥 Autores
+
+| Nome | RM | Função |
+|------|----|----|
+| Thiago Vanzele | RM374158 | Desenvolvimento Backend |
+| Luiz Eduardo Gambeti | RM373030 | Desenvolvimento Backend |
+| Sandoval Bento da Silva | RM370706 | Desenvolvimento Backend |
+
+---
+
 ## Contato & Suporte
 
 Para dúvidas ou problemas:
 1. Verificar documentação (README.md)
 2. Consultar logs: `docker-compose logs -f <serviço>`
-3. Teste endpoints com Postman: `postman/Hospital-Scheduler-Local.postman_collection.json`
+3. Teste endpoints com Postman: `postman/Hospital Scheduler - Docker.postman_collection.json`
 
 ---
 
-**Última atualização:** Agosto 2026  
+**Última atualização:** Setembro 2026  
 **Versão:** 1.0.0  
 **Status:** ✅ Production Ready

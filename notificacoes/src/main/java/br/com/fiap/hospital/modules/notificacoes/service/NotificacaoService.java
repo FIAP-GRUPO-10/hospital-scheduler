@@ -4,6 +4,7 @@ import br.com.fiap.hospital.modules.notificacoes.constants.NotificacaoConstants;
 import br.com.fiap.hospital.modules.notificacoes.model.Lembrete;
 import br.com.fiap.hospital.modules.notificacoes.model.LembreteRequest;
 import org.springframework.http.HttpStatus;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -24,6 +25,25 @@ public class NotificacaoService {
 
     private final Map<Long, Lembrete> lembretes = new ConcurrentHashMap<>();
     private final AtomicLong sequence = new AtomicLong(1L);
+
+    // 👇 Consumidor Kafka para o tópico de notificações
+    @KafkaListener(topics = "notificacao-topic", groupId = "notificacoes-group")
+    public void consumirEventoNotificacao(Map<String, Object> evento) {
+        try {
+            String tipo = (String) evento.get("tipo");
+            String pacienteId = (String) evento.get("pacienteId");
+            String medicoId = (String) evento.get("medicoId");
+            LocalDateTime dataHora = (LocalDateTime) evento.get("dataHora");
+            String motivo = (String) evento.get("motivo");
+
+            String mensagem = "Consulta " + tipo + " - Motivo: " + motivo;
+
+            criarNotificacaoAutomatica(pacienteId, medicoId, dataHora, mensagem);
+            logger.info("Evento Kafka consumido e lembrete criado para paciente {}", pacienteId);
+        } catch (Exception e) {
+            logger.error("Erro ao processar evento de notificação: {}", evento, e);
+        }
+    }
 
     public List<Lembrete> listarLembretes(Authentication authentication, String pacienteId) {
         if (ehPaciente(authentication)) {
