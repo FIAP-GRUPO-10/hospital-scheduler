@@ -1,15 +1,15 @@
 package br.com.fiap.hospital.modules.historico.service;
 
 import br.com.fiap.hospital.modules.historico.model.ConsultaHistorico;
+import br.com.fiap.hospital.modules.historico.model.CriarLembreteInput;
+import br.com.fiap.hospital.modules.historico.model.Lembrete;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -18,6 +18,11 @@ public class HistoricoService {
 
     private final Map<Long, ConsultaHistorico> historico = new ConcurrentHashMap<>();
     private final AtomicLong sequence = new AtomicLong(1L);
+
+    // Novo: armazenamento de lembretes
+    private final Map<String, Lembrete> lembretes = new ConcurrentHashMap<>();
+
+    // ================== CONSULTAS ==================
 
     public List<ConsultaHistorico> listarTodos(Authentication authentication, String pacienteId) {
         if (ehPaciente(authentication)) {
@@ -58,8 +63,7 @@ public class HistoricoService {
                 .filter(consulta -> pacienteId.equalsIgnoreCase(consulta.pacienteId()))
                 .filter(consulta -> !somenteFuturas || consulta.dataHora().isAfter(LocalDateTime.now()))
                 .toList();
-     }
-
+    }
 
     private boolean ehPaciente(Authentication authentication) {
         return authentication != null && authentication.getAuthorities().stream()
@@ -71,16 +75,13 @@ public class HistoricoService {
         sequence.updateAndGet(current -> Math.max(current, consulta.id() + 1));
     }
 
-    /**
-     * Armazena uma consulta no histórico
-     */
     public void armazenarConsulta(ConsultaHistorico consulta) {
         if (consulta != null && consulta.id() != null && !historico.containsKey(consulta.id())) {
             registrarConsulta(consulta);
         }
     }
 
-     public ConsultaHistorico editarConsulta(Long id, ConsultaHistorico consulta, Authentication authentication) {
+    public ConsultaHistorico editarConsulta(Long id, ConsultaHistorico consulta, Authentication authentication) {
         if (id == null || !historico.containsKey(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Consulta não encontrada.");
         }
@@ -110,5 +111,36 @@ public class HistoricoService {
 
         historico.put(id, atualizado);
         return atualizado;
+    }
+
+    // ================== LEMBRETES ==================
+
+    public List<Lembrete> listarLembretesPorPaciente(String pacienteId) {
+        return lembretes.values().stream()
+                .filter(l -> l.getPacienteId().equalsIgnoreCase(pacienteId))
+                .toList();
+    }
+
+    public List<Lembrete> listarLembretesPorMedico(String medicoId) {
+        return lembretes.values().stream()
+                .filter(l -> l.getMedicoId().equalsIgnoreCase(medicoId))
+                .toList();
+    }
+
+    public Lembrete criarLembrete(CriarLembreteInput input) {
+        String id = UUID.randomUUID().toString();
+        Lembrete lembrete = new Lembrete(
+                id,
+                input.getPacienteId(),
+                input.getMedicoId(),
+                input.getDataConsulta(),
+                input.getMensagem()
+        );
+        lembretes.put(id, lembrete);
+        return lembrete;
+    }
+
+    public Boolean removerLembrete(String id) {
+        return lembretes.remove(id) != null;
     }
 }

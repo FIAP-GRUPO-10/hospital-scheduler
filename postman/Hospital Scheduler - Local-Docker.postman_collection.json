@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "a43aebac-a46f-4ea8-a11f-8aae97d72fe8",
-		"name": "Hospital Scheduler - Local",
+		"_postman_id": "c0d28887-c1df-4c87-9d8f-762796788642",
+		"name": "Hospital Scheduler - Local/Docker",
 		"description": "Collection para testar os endpoints locais usando JWT Bearer Token.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "18219804"
@@ -234,7 +234,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"pacienteId\": \"PAC-1001\",\n  \"medicoId\": \"MED-2001\",\n  \"enfermeiroId\": \"ENF-3001\",\n  \"dataHora\": \"2026-09-17T09:00:00\", \n  \"duracaoMinutos\": 60,\n  \"motivo\": \"Consulta de rotina 2\"\n}\n"
+							"raw": "{\n  \"pacienteId\": \"PAC-1001\",\n  \"medicoId\": \"MED-2001\",\n  \"enfermeiroId\": \"ENF-3001\",\n  \"dataHora\": \"2026-09-17T09:00:00\", \n  \"duracaoMinutos\": 60,\n  \"motivo\": \"Consulta de rotina\"\n}\n"
 						},
 						"url": {
 							"raw": "{{baseUrlAgendamento}}/api/v1/agenda/consultas",
@@ -659,7 +659,7 @@
 			"name": "GraphQL",
 			"item": [
 				{
-					"name": "http://localhost:8083/graphql",
+					"name": "Criar Paciente Mutation",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -672,21 +672,27 @@
 							]
 						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
 						"body": {
-							"mode": "graphql",
-							"graphql": {
-								"query": "\npacienteConsultas(pacienteId: \"PAC-1001\") {\n      id\n      nomePaciente\n      nomeMedico\n      dataHoraFormatted\n      status\n}\n  ",
-								"variables": ""
+							"mode": "raw",
+							"raw": "{\n    \"query\": \"mutation ($input: CriarLembreteInput!) { criarLembrete(input: $input) { id pacienteId medicoId mensagem dataConsulta } }\",\n    \"variables\": {\n        \"input\": {\n            \"pacienteId\": \"PAC-1001\",\n            \"medicoId\": \"MED-2001\",\n            \"dataConsulta\": \"2026-09-24T09:00:00\",\n            \"mensagem\": \"Teste via GraphQL\"\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8083/graphql",
-							"protocol": "http",
+							"raw": "{{baseUrlHistorico}}/graphql",
 							"host": [
-								"localhost"
+								"{{baseUrlHistorico}}"
 							],
-							"port": "8083",
 							"path": [
 								"graphql"
 							]
@@ -695,16 +701,29 @@
 					"response": []
 				},
 				{
-					"name": "http://localhost:8083/graphql Copy",
+					"name": "Listar Consulta futuras - PACIENTE",
 					"request": {
 						"auth": {
-							"type": "noauth"
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{tokenMedico}}",
+									"type": "string"
+								}
+							]
 						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
 						"body": {
 							"mode": "raw",
-							"raw": "",
+							"raw": "{\n  \"query\": \"query ($pacienteId: ID!) { pacienteConsultasFuturas(pacienteId: $pacienteId) { id dataHora status medicoId nomeMedico } }\",\n  \"variables\": {\n    \"pacienteId\": \"{{pacienteId}}\"\n  }\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -712,15 +731,12 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8083/actuator/health",
-							"protocol": "http",
+							"raw": "{{baseUrlHistorico}}/graphql",
 							"host": [
-								"localhost"
+								"{{baseUrlHistorico}}"
 							],
-							"port": "8083",
 							"path": [
-								"actuator",
-								"health"
+								"graphql"
 							]
 						}
 					},
@@ -758,6 +774,11 @@
 		{
 			"key": "tokenPaciente",
 			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "pacienteId",
+			"value": "PAC-1001",
 			"type": "string"
 		}
 	]
