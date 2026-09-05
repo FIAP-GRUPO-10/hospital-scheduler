@@ -163,8 +163,7 @@ hospital-scheduler/
 │       └── application.properties
 │
 └── postman/                             # Coleções Postman para testes
-    ├── Hospital-Scheduler-Local.postman_collection.json
-    └── Hospital-Scheduler-Local.postman_environment.json
+    └── Hospital Scheduler - Local-Docker.postman_collection.json
 ```
 
 ---
@@ -179,7 +178,6 @@ hospital-scheduler/
 
 **Build do Projeto:**
 ```bash
-cd /home/sandoval/IdeaProjects/hospital-scheduler
 mvn clean install
 ```
 
@@ -212,8 +210,6 @@ cd historico && mvn spring-boot:run
 ### 2. Execução com Docker Compose (Recomendado)
 
 **Build e Iniciar:**
-```bash
-cd /home/sandoval/IdeaProjects/hospital-scheduler
 
 # Construir imagens e subir containers
 docker-compose up -d --build
@@ -835,6 +831,53 @@ curl -X GET http://localhost:8083/api/v1/historico/pacientes/PAC-1001/consultas 
   -H "Authorization: Bearer $TOKEN_PAC" | jq
 ```
 
+### 4. GraphQL: Criar Lembrete
+
+```bash
+# Login como Médico (se não tiver token)
+TOKEN=$(curl -s -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "MED-2001", "password": "medico123"}' \
+  | jq -r '.token')
+
+# Criar lembrete via GraphQL mutation
+curl -X POST http://localhost:8083/graphql \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "mutation ($input: CriarLembreteInput!) { criarLembrete(input: $input) { id pacienteId medicoId mensagem dataConsulta } }",
+    "variables": {
+      "input": {
+        "pacienteId": "PAC-1001",
+        "medicoId": "MED-2001",
+        "dataConsulta": "2026-09-24T09:00:00",
+        "mensagem": "Teste via GraphQL"
+      }
+    }
+  }' | jq
+```
+
+### 5. GraphQL: Listar Consultas Futuras do Paciente
+
+```bash
+# Login como Médico ou Paciente
+TOKEN=$(curl -s -X POST http://localhost:8081/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "MED-2001", "password": "medico123"}' \
+  | jq -r '.token')
+
+# Listar consultas futuras via GraphQL query
+curl -X POST http://localhost:8083/graphql \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "query ($pacienteId: ID!) { pacienteConsultasFuturas(pacienteId: $pacienteId) { id dataHora status medicoId nomeMedico } }",
+    "variables": {
+      "pacienteId": "PAC-1001"
+    }
+  }' | jq
+```
+
 ### 2. Validar Conflito de Agenda
 
 ```bash
@@ -1095,7 +1138,7 @@ CREATE INDEX idx_consulta_data ON consulta(data_hora);
 Para dúvidas ou problemas:
 1. Verificar documentação (README.md)
 2. Consultar logs: `docker-compose logs -f <serviço>`
-3. Teste endpoints com Postman: `postman/Hospital Scheduler - Docker.postman_collection.json`
+3. Teste endpoints com Postman: `postman/Hospital Scheduler - Local-Docker.postman_collection.json`
 
 ---
 

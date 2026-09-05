@@ -16,6 +16,12 @@ type Query {
 
   # Busca consultas com filtros avançados
   consultasFiltered(filtro: ConsultaFiltro!): [Consulta!]!
+
+  # Lista todos os lembretes de um paciente
+  lembretesPaciente(pacienteId: ID!): [Lembrete!]!
+
+  # Lista todos os lembretes de um médico
+  lembretesMedico(medicoId: ID!): [Lembrete!]!
 }
 
 type Consulta {
@@ -58,6 +64,12 @@ type Mutation {
 
   # Marca consulta como concluída
   concluirConsulta(id: ID!): ConsultaResult!
+
+  # Cria um lembrete
+  criarLembrete(input: CriarLembreteInput!): Lembrete!
+
+  # Remove um lembrete
+  removerLembrete(id: ID!): Boolean!
 }
 
 type ConsultaResult {
@@ -66,3 +78,18 @@ type ConsultaResult {
   consulta: Consulta
 }
 
+# Tipos para lembretes
+input CriarLembreteInput {
+  pacienteId: ID!
+  medicoId: ID!
+  dataConsulta: String!
+  mensagem: String!
+}
+
+type Lembrete {
+  id: ID!
+  pacienteId: ID!
+  medicoId: ID!
+  dataConsulta: String!
+  mensagem: String!
+}
